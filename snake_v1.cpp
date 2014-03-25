@@ -9,6 +9,7 @@
 #define EXIT 27
 #define CARACTER 'x'
 #define CABEZA '<'
+#define T 15
 
 enum TipoOpcion { normal, extremo, puntuaciones, salir};
 
@@ -76,10 +77,9 @@ void inicializar_tablero(char tablero[][COLUMNAS], int pos_usuario[][2]){
     comida_aleatoria(tablero);
 }
 //captura el movimiento del usuario
-int movimiento(int respuesta_anterior, int velocidad){
+int movimiento(int respuesta_anterior){
     int respuesta;
     //coge los caracteres introducidos por el usuario
-    halfdelay(velocidad);//si no introduce nada el usuario en x tiempo se introduce solo
     respuesta = getch();//coge los caracteres
     //compara que la respuesta es correcta
     if(respuesta != KEY_UP && respuesta != KEY_LEFT && respuesta != KEY_RIGHT && respuesta != KEY_DOWN && respuesta != EXIT)
@@ -273,7 +273,7 @@ void mostrar_puntuaciones(){
 
 }
 //el bucle y todas las variables de la partida
-void partida(int nivel_minimo, int dividir, int velocidad_minima){
+void partida(int nivel_minimo, int dividir, int velocidad_minima, bool modo_extremo){
     char opcion;
     char tablero[FILAS][COLUMNAS];
     int pos_usuario[100][2],
@@ -284,6 +284,7 @@ void partida(int nivel_minimo, int dividir, int velocidad_minima){
 	nivel;
     bool comido,//determina si se ha comido o no comida
 	 muerto;//determina si esta muerto o vivo.
+
     do{
 	direccion = KEY_RIGHT;
 	posicion_inicial(pos_usuario);
@@ -297,6 +298,7 @@ void partida(int nivel_minimo, int dividir, int velocidad_minima){
 	velocidad = velocidad_minima;
 	siguiente_nivel = 0;
 	do{
+	    timeout( velocidad );
 	    imprimir_tablero(tablero, nivel);
 
 	    if(comido == true){
@@ -307,18 +309,20 @@ void partida(int nivel_minimo, int dividir, int velocidad_minima){
 		if(nivel > nivel_minimo)
 		    for(int veces_pinta=0; veces_pinta<nivel/dividir; veces_pinta++)
 			muro_aleatorio(tablero);
-
+		if(velocidad > 50 && modo_extremo == true)
+			velocidad -= 5;
 		if(siguiente_nivel == 5){
 		    nivel ++;
 
-		    if(velocidad > 0)
-			velocidad--;
-		    if(nivel > 4)
+		    if(velocidad > 0 && modo_extremo == false)
+			velocidad -= 10;
+		    
+		    if(nivel > 4 && modo_extremo == false)
 			muro_aleatorio(tablero);
 		    siguiente_nivel = 0;
 		}
 	    }
-	    direccion = movimiento(direccion, velocidad);//captura el movimiento del usuario
+	    direccion = movimiento(direccion);//captura el movimiento del usuario
 	    movimiento_usuario(direccion, pos_usuario, tablero, &comido, &longitud, &muerto);//mueve al usuario
 	}while(direccion != EXIT && muerto != true);
 
@@ -346,21 +350,23 @@ int main(int argc, char *argv[]){
     int dividir,
 	nivel_minimo,
 	velocidad_minima;
-
+    bool modo_extremo = false;
     enum TipoOpcion opcion;
     do{
 	switch(opcion = menu()){
 	    case normal:
 		dividir = 10;
 		nivel_minimo = 9;
-		velocidad_minima = 3;
-		partida(nivel_minimo, dividir, velocidad_minima);
+		velocidad_minima = 200;
+		modo_extremo = false;
+		partida(nivel_minimo, dividir, velocidad_minima, modo_extremo);
 		break;
 	    case extremo:
 		dividir = 1;
 		nivel_minimo = 1;
-		velocidad_minima = 1;
-		partida(nivel_minimo, dividir, velocidad_minima);
+		velocidad_minima = 200;
+		modo_extremo = true;
+		partida(nivel_minimo, dividir, velocidad_minima, modo_extremo);
 		break;
 	    case puntuaciones:
 		mostrar_puntuaciones();
