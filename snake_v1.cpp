@@ -4,8 +4,8 @@
 #include <time.h> //se usa para utilizar random
 #include <ncurses.h> 
 
-#define FILAS 20
-#define COLUMNAS 20
+#define FILAS 50
+#define COLUMNAS 50
 #define EXIT 27
 #define CARACTER 'x'
 #define CABEZA '<'
@@ -90,36 +90,45 @@ int movimiento(int respuesta_anterior){
 	respuesta_anterior = respuesta;
     return respuesta;
 }
+void cambiar_pos(int longitud, char tablero[][COLUMNAS], int pos_usuario[][2]){
+    //copia la posicion desde la ultima posicion de la serpiete hasta la 2.
+    for(int copiar = longitud; copiar>0; copiar--){
+	for(int c_pos = 0; c_pos<2; c_pos++)
+	    pos_usuario[copiar][c_pos] = pos_usuario[copiar-1][c_pos];
+	tablero[pos_usuario[copiar][0]][pos_usuario[copiar][1]] = CARACTER;
+    }
+
+}
 //mueve la serpiente por la matriz
-void movimiento_usuario(int direccion, int pos_usuario[][2], char tablero[][COLUMNAS], bool *comido, int *longitud, bool *muerto){
+void movimiento_usuario(int *direccion, int pos_usuario[][2], char tablero[][COLUMNAS], bool *comido, int *longitud, bool *muerto){
     //escoge el movimiento en funcion de la respuesta del usuario
-    switch(direccion){
+    switch(*direccion){
 	case KEY_RIGHT:
 	    //si el siguiente movimiento es comida
 	    if(tablero[pos_usuario[0][0]][pos_usuario[0][1] + 1] == '#'){
 		*comido = true;//se indica que se comio la comida
-		(*longitud)++;//se alarga la serpiente
+		(*longitud) ++;//se alarga la serpiente
 	    }
 	    else
-		//se comprueba si el siguiente movimiento es la propia serpiente o el muro
-		if(tablero[pos_usuario[0][0]][pos_usuario[0][1] + 1] == 'H' || 
-		   tablero[pos_usuario[0][0]][pos_usuario[0][1] + 1] == CARACTER){
-		    *muerto = true;//se indica que la serpiente ha muerto
-		    break;//se rompe el bucle
+		if(pos_usuario[0][1] + 1 == pos_usuario[1][1]){
+		    *direccion = KEY_LEFT;
+		    movimiento_usuario(direccion, pos_usuario, tablero, comido, longitud, muerto);    
+		    break;
 		}
 		else
-		    //se borra el ultimo caracter de la serpiente
-		    tablero[pos_usuario[*longitud][0]][pos_usuario[*longitud][1]] = ' ';
+		    //se comprueba si el siguiente movimiento es la propia serpiente o el muro
+		    if(tablero[pos_usuario[0][0]][pos_usuario[0][1] + 1] == 'H' || 
+			    tablero[pos_usuario[0][0]][pos_usuario[0][1] + 1] == CARACTER){
+			*muerto = true;//se indica que la serpiente ha muerto
+			break;//se rompe el bucle
+		    }
+		    else
+			//se borra el ultimo caracter de la serpiente
+			tablero[pos_usuario[*longitud][0]][pos_usuario[*longitud][1]] = ' ';
 
-	    //copia la posicion desde la ultima posicion de la serpiete hasta la 2.
-	    for(int copiar = *longitud; copiar>0; copiar--){
-		for(int c_pos = 0; c_pos<2; c_pos++)
-		    pos_usuario[copiar][c_pos] = pos_usuario[copiar-1][c_pos];
-		tablero[pos_usuario[copiar][0]][pos_usuario[copiar][1]] = CARACTER;
-	    }
-            
+	    cambiar_pos(*longitud, tablero, pos_usuario);    
+
 	    pos_usuario[0][1]++;//actualiza la posicion de la cabeza 
-	    tablero[pos_usuario[0][0]][pos_usuario[0][1]] = CABEZA;//asigna al tablero la posicion de la cabeza
 
 	    break;
 
@@ -129,22 +138,23 @@ void movimiento_usuario(int direccion, int pos_usuario[][2], char tablero[][COLU
 		(*longitud)++;
 	    }
 	    else
-		if(tablero[pos_usuario[0][0]][pos_usuario[0][1] - 1] == 'H' || 
-			tablero[pos_usuario[0][0]][pos_usuario[0][1] - 1] == CARACTER){
-		    *muerto = true;
+		if(pos_usuario[0][1] - 1 == pos_usuario[1][1]){
+		    *direccion = KEY_RIGHT;
+		    movimiento_usuario(direccion, pos_usuario, tablero, comido, longitud, muerto);    
 		    break;
 		}
 		else
-		    tablero[pos_usuario[*longitud][0]][pos_usuario[*longitud][1]] = ' ';
+		    if(tablero[pos_usuario[0][0]][pos_usuario[0][1] - 1] == 'H' || 
+			    tablero[pos_usuario[0][0]][pos_usuario[0][1] - 1] == CARACTER){
+			*muerto = true;
+			break;
+		    }
+		    else
+			tablero[pos_usuario[*longitud][0]][pos_usuario[*longitud][1]] = ' ';
 
-	    for(int copiar = *longitud; copiar>0; copiar--){
-		for(int c_pos = 0; c_pos<2; c_pos++)
-		    pos_usuario[copiar][c_pos] = pos_usuario[copiar-1][c_pos];
-		tablero[pos_usuario[copiar][0]][pos_usuario[copiar][1]] = CARACTER;
-	    }
+	    cambiar_pos(*longitud, tablero, pos_usuario);    
+
 	    pos_usuario[0][1]--; 
-	    tablero[pos_usuario[0][0]][pos_usuario[0][1]] = CABEZA;
-
 	    break;
 
 	case KEY_UP:
@@ -153,22 +163,23 @@ void movimiento_usuario(int direccion, int pos_usuario[][2], char tablero[][COLU
 		(*longitud)++;
 	    }
 	    else
-		if(tablero[pos_usuario[0][0] - 1][pos_usuario[0][1]] == 'H' || 
-			tablero[pos_usuario[0][0] - 1][pos_usuario[0][1]] == CARACTER){
-		    *muerto = true;
+		if(pos_usuario[0][0] - 1 == pos_usuario[1][0]){
+		    *direccion = KEY_DOWN;
+		    movimiento_usuario(direccion, pos_usuario, tablero, comido, longitud, muerto);    
 		    break;
 		}
 		else
-		    tablero[pos_usuario[*longitud][0]][pos_usuario[*longitud][1]] = ' ';
+		    if(tablero[pos_usuario[0][0] - 1][pos_usuario[0][1]] == 'H' || 
+			    tablero[pos_usuario[0][0] - 1][pos_usuario[0][1]] == CARACTER){
+			*muerto = true;
+			break;
+		    }
+		    else
+			tablero[pos_usuario[*longitud][0]][pos_usuario[*longitud][1]] = ' ';
 
-	    for(int copiar = *longitud; copiar>0; copiar--){
-		for(int c_pos = 0; c_pos<2; c_pos++)
-		    pos_usuario[copiar][c_pos] = pos_usuario[copiar-1][c_pos];
-		tablero[pos_usuario[copiar][0]][pos_usuario[copiar][1]] = CARACTER;
-	    }
+	    cambiar_pos(*longitud, tablero, pos_usuario);    
+
 	    pos_usuario[0][0]--; 
-	    tablero[pos_usuario[0][0]][pos_usuario[0][1]] = CABEZA;
-
 	    break;
 
 	case KEY_DOWN:
@@ -177,25 +188,26 @@ void movimiento_usuario(int direccion, int pos_usuario[][2], char tablero[][COLU
 		(*longitud)++;
 	    }
 	    else
-		if(tablero[pos_usuario[0][0] + 1][pos_usuario[0][1]] == 'H' || 
-			tablero[pos_usuario[0][0] + 1][pos_usuario[0][1]] == CARACTER){
-		    *muerto = true;
+		if(pos_usuario[0][0] + 1 == pos_usuario[1][0]){
+		    *direccion = KEY_UP;
+		    movimiento_usuario(direccion, pos_usuario, tablero, comido, longitud, muerto);    
 		    break;
 		}
 		else
-		    tablero[pos_usuario[*longitud][0]][pos_usuario[*longitud][1]] = ' ';
+		    if(tablero[pos_usuario[0][0] + 1][pos_usuario[0][1]] == 'H' || 
+			    tablero[pos_usuario[0][0] + 1][pos_usuario[0][1]] == CARACTER){
+			*muerto = true;
+			break;
+		    }
+		    else
+			tablero[pos_usuario[*longitud][0]][pos_usuario[*longitud][1]] = ' ';
 
-	    for(int copiar = *longitud; copiar>0; copiar--){
-		for(int c_pos = 0; c_pos<2; c_pos++)
-		    pos_usuario[copiar][c_pos] = pos_usuario[copiar-1][c_pos];
-		tablero[pos_usuario[copiar][0]][pos_usuario[copiar][1]] = CARACTER;
-	    }
+	    cambiar_pos(*longitud, tablero, pos_usuario);    
 
 	    pos_usuario[0][0]++; 
-	    tablero[pos_usuario[0][0]][pos_usuario[0][1]] = CABEZA;
-
 	    break;
     }
+    tablero[pos_usuario[0][0]][pos_usuario[0][1]] = CABEZA;//asigna al tablero la posicion de la cabeza
 
 }
 //genera posicion aleatoria para el muro
@@ -222,7 +234,7 @@ void muro_aleatorio(char tablero[][COLUMNAS]){
 //imprime el tablero por pantalla
 void imprimir_tablero(char tablero[][COLUMNAS], int nivel){
     clear();
-    
+
     init_pair(1, COLOR_GREEN, COLOR_BLACK);//asigna el color que se le dara
     init_pair(2, COLOR_RED, COLOR_BLACK);
     init_pair(3, COLOR_BLUE, COLOR_BLACK);
@@ -310,20 +322,20 @@ void partida(int nivel_minimo, int dividir, int velocidad_minima, bool modo_extr
 		    for(int veces_pinta=0; veces_pinta<nivel/dividir; veces_pinta++)
 			muro_aleatorio(tablero);
 		if(velocidad > 50 && modo_extremo == true)
-			velocidad -= 5;
+		    velocidad -= 5;
 		if(siguiente_nivel == 5){
 		    nivel ++;
 
 		    if(velocidad > 0 && modo_extremo == false)
 			velocidad -= 10;
-		    
+
 		    if(nivel > 4 && modo_extremo == false)
 			muro_aleatorio(tablero);
 		    siguiente_nivel = 0;
 		}
 	    }
 	    direccion = movimiento(direccion);//captura el movimiento del usuario
-	    movimiento_usuario(direccion, pos_usuario, tablero, &comido, &longitud, &muerto);//mueve al usuario
+	    movimiento_usuario(&direccion, pos_usuario, tablero, &comido, &longitud, &muerto);//mueve al usuario
 	}while(direccion != EXIT && muerto != true);
 
 	printw("\tGAME OVER\n"
@@ -364,7 +376,7 @@ int main(int argc, char *argv[]){
 	    case extremo:
 		dividir = 1;
 		nivel_minimo = 1;
-		velocidad_minima = 200;
+		velocidad_minima = 100;
 		modo_extremo = true;
 		partida(nivel_minimo, dividir, velocidad_minima, modo_extremo);
 		break;
